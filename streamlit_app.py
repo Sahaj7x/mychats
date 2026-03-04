@@ -3,6 +3,12 @@ import re
 from datetime import datetime
 from groq import Groq
 
+st.set_page_config(
+    page_title="Shield Chat", 
+    page_icon="🛡️", 
+    layout="centered", 
+    initial_sidebar_state="collapsed"
+)
 # --- 1. CONFIGURATION ---
 # IMPORTANT: Replace with your actual Groq key
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
