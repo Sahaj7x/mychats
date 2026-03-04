@@ -3,6 +3,15 @@ import re
 from datetime import datetime
 from groq import Groq
 
+hide_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_style, unsafe_allow_html=True)
+
 st.set_page_config(
     page_title="Shield Chat", 
     page_icon="🛡️", 
