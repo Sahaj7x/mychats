@@ -117,7 +117,7 @@ if st.session_state.locked:
         else:
             st.error("AI rejected that. Try again.")
 
-elif prompt := st.chat_input("Enter Manglish..."):
+elif prompt := st.chat_input("Enter Message..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     score = analyze_vibe(prompt)
     st.session_state.warning_score += score
