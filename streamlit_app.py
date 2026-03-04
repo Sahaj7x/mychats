@@ -5,7 +5,7 @@ from groq import Groq
 
 # --- 1. CONFIGURATION ---
 # IMPORTANT: Replace with your actual Groq key
-client = Groq(api_key=st.session_state.get("GROQ_API_KEY", st.secrets["GROQ_API_KEY"]))
+client = Groq(api_key=st.session_state.get("GROQ_API_KEY", st.secrets["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"]))
 
 # Mobile Page Config
 st.set_page_config(page_title="Shield Chat", page_icon="🛡️")
