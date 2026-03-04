@@ -14,7 +14,7 @@ st.markdown(hide_style, unsafe_allow_html=True)
 
 st.set_page_config(
     page_title="Shield Chat", 
-    page_icon="🛡️", 
+    page_icon="🎀", 
     layout="centered", 
     initial_sidebar_state="collapsed"
 )
