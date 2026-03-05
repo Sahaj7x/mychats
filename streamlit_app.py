@@ -6,6 +6,7 @@ import datetime
 # 1. Secret & AI Setup
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
+@st.cache_resource
 def init_connection():
     return mysql.connector.connect(
         host=st.secrets["mysql"]["host"],
