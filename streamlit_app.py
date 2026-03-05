@@ -13,14 +13,14 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 # 3. Database Connection Function (TiDB Cloud)
 def init_connection():
     try:
+        # We use use_pure=True to bypass the local SSL path issue 
+        # while keeping the connection secure for TiDB Cloud.
         return mysql.connector.connect(
             host=st.secrets["mysql"]["host"],
             port=st.secrets["mysql"]["port"],
             user=st.secrets["mysql"]["user"],
             password=st.secrets["mysql"]["password"],
             database=st.secrets["mysql"]["database"],
-            # This line is the key: it tells the driver to use SSL 
-            # without looking for a local certificate file that doesn't exist on Streamlit
             ssl_disabled=False,
             use_pure=True
         )
