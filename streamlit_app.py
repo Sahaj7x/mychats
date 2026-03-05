@@ -1,56 +1,102 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import mysql.connector
 from groq import Groq
-import pandas as pd
-from datetime import datetime
+import datetime
 
-# 1. Page Setup
-st.set_page_config(page_title="Shield Chat", page_icon="🛡️")
+# 1. Setup Page Config
+st.set_page_config(page_title="Shield Chat: Vibe Guard", page_icon="🛡️")
 st.title("🛡️ Shield Chat: Vibe Guard")
 
-# 2. Connect to Google Sheets & Groq
-conn = st.connection("gsheets", type=GSheetsConnection)
+# 2. Initialize Groq AI
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-# 3. Load Chat History from Google Sheets
-def load_data():
-    return conn.read(worksheet="Sheet1", usecols=[0, 1, 2], ttl=0)
+# 3. Database Connection Function (TiDB Cloud)
+def init_connection():
+    return mysql.connector.connect(
+        host=st.secrets["mysql"]["host"],
+        port=st.secrets["mysql"]["port"],
+        user=st.secrets["mysql"]["user"],
+        password=st.secrets["mysql"]["password"],
+        database=st.secrets["mysql"]["database"],
+        ssl_verify_cert=True  # Required for TiDB Cloud security
+    )
 
-data = load_data()
+# 4. Create Table if it doesn't exist
+def init_db():
+    conn = init_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            timestamp DATETIME,
+            sender VARCHAR(255),
+            message TEXT,
+            sentiment VARCHAR(50)
+        )
+    """)
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-# 4. Sidebar for User Selection
-user = st.sidebar.radio("Who is chatting?", ["Sachu", "Partner"])
+# 5. Function to Save Message to MySQL
+def save_to_db(sender, message, sentiment):
+    try:
+        conn = init_connection()
+        cursor = conn.cursor()
+        now = datetime.datetime.now()
+        query = "INSERT INTO chat_logs (timestamp, sender, message, sentiment) VALUES (%s, %s, %s, %s)"
+        cursor.execute(query, (now, sender, message, sentiment))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        st.error(f"Database Error: {e}")
 
-# 5. Display WhatsApp-style Chat History
-st.subheader("💬 Conversation History")
-for index, row in data.iterrows():
-    with st.chat_message("user" if row['name'] == "Sachu" else "assistant"):
-        st.write(f"**{row['name']}**: {row['message']}")
-        st.caption(f"{row['timestamp']}")
+# Initialize the DB on startup
+init_db()
 
-# 6. Chat Input & AI Vibe Check
-if prompt := st.chat_input("Type your message..."):
-    # AI Vibe Check logic
+# 6. Sentiment Analysis Logic
+def analyze_sentiment(text):
     chat_completion = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": "You are a relationship mediator. If the user's message is aggressive, warn them. If it is calm, say 'SAFE'."},
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{
+            "role": "system",
+            "content": "Analyze the sentiment of this relationship message. Respond with only one word: Positive, Neutral, or Negative."
+        }, {
+            "role": "user",
+            "content": text
+        }],
         model="llama3-8b-8192",
     )
-    
-    response = chat_completion.choices[0].message.content
+    return chat_completion.choices[0].message.content
 
-    if "SAFE" in response.upper():
-        # Save to Google Sheets if it's safe
-        new_row = pd.DataFrame([{
-            "name": user,
-            "message": prompt,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }])
-        updated_df = pd.concat([data, new_row], ignore_index=True)
-        conn.update(worksheet="Sheet1", data=updated_df)
-        st.success("Message Sent & Saved!")
-        st.rerun()
-    else:
-        st.error(f"⚠️ Vibe Check Warning: {response}")
+# 7. UI Sidebar for History
+st.sidebar.header("Chat Settings")
+if st.sidebar.button("Clear View"):
+    st.rerun()
+
+# 8. Main Chat Interface
+user_name = st.text_input("Enter your name:", "User")
+user_input = st.chat_input("Type your message here...")
+
+if user_input:
+    # Get Sentiment from Groq
+    sentiment_result = analyze_sentiment(user_input)
+    
+    # Save to TiDB Cloud
+    save_to_db(user_name, user_input, sentiment_result)
+    
+    # Display Results
+    with st.chat_message("user"):
+        st.write(f"**{user_name}:** {user_input}")
+        st.caption(f"Sentiment: {sentiment_result}")
+
+# 9. Show Recent History from MySQL
+if st.checkbox("Show Chat History"):
+    conn = init_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM chat_logs ORDER BY timestamp DESC LIMIT 10")
+    rows = cursor.fetchall()
+    for row in rows:
+        st.write(f"[{row['timestamp']}] {row['sender']}: {row['message']} ({row['sentiment']})")
+    cursor.close()
+    conn.close()
