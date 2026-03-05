@@ -11,10 +11,9 @@ st.title("🛡️ Shield Chat: Vibe Guard")
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # 3. Database Connection Function (TiDB Cloud)
+# 3. Database Connection Function (TiDB Cloud)
 def init_connection():
     try:
-        # We use use_pure=True to bypass the local SSL path issue 
-        # while keeping the connection secure for TiDB Cloud.
         return mysql.connector.connect(
             host=st.secrets["mysql"]["host"],
             port=st.secrets["mysql"]["port"],
@@ -27,24 +26,25 @@ def init_connection():
     except Exception as e:
         st.error(f"Connection Failed: {e}")
         return None
-    )
 
 # 4. Create Table if it doesn't exist
 def init_db():
     conn = init_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS chat_logs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            timestamp DATETIME,
-            sender VARCHAR(255),
-            message TEXT,
-            sentiment VARCHAR(50)
-        )
-    """)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chat_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                timestamp DATETIME,
+                sender VARCHAR(255),
+                message TEXT,
+                sentiment VARCHAR(50)
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+   
 
 # 5. Function to Save Message to MySQL
 def save_to_db(sender, message, sentiment):
