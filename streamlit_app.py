@@ -60,7 +60,7 @@ st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 conn = init_connection()
 if conn:
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT message, sentiment, timestamp FROM chat_logs ORDER BY timestamp DESC LIMIT 15")
+    cursor.execute("SELECT message, sentiment, timestamp FROM chat_logs ORDER BY timestamp DESC LIMIT 10")
     for row in reversed(cursor.fetchall()):
         align_class = "received" # For analysis targets
         time_str = row['timestamp'].strftime("%I:%M %p")
