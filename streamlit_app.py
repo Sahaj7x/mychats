@@ -73,10 +73,10 @@ def analyze_sentiment(text):
             "role": "user",
             "content": text
         }],
-        model="llama3-8b-8192",
+        # Updated model name to resolve the 'model_decommissioned' error
+        model="llama-3.3-70b-versatile", 
     )
     return chat_completion.choices[0].message.content
-
 # 7. UI Sidebar for History
 st.sidebar.header("Chat Settings")
 if st.sidebar.button("Clear View"):
